@@ -1,0 +1,70 @@
+{
+    "robot": {
+        "width": 90,
+        "length": 120,
+        "height": 60,
+        "weight": 200
+    },
+    "wheels": {
+        "diameter": 25.0,
+        "base": 80.0,
+        "type": "n20"
+    },
+    "motors": {
+        "type": "dc",
+        "voltage": 3.7,
+        "max_speed": 1000,
+        "acceleration": 500,
+        "gear_ratio": 30
+    },
+    "sensors": {
+        "ir": {
+            "count": 5,
+            "type": "sharp_gp2y0a21",
+            "range_min": 10,
+            "range_max": 80,
+            "threshold_front": 150,
+            "threshold_side": 100,
+            "threshold_diagonal": 120
+        },
+        "encoders": {
+            "count": 2,
+            "cpr": 12,
+            "type": "optical"
+        },
+        "imu": {
+            "enabled": false,
+            "type": "mpu6050"
+        }
+    },
+    "battery": {
+        "type": "lipo",
+        "cells": 2,
+        "voltage": 7.4,
+        "capacity": 300,
+        "discharge_rate": 25
+    },
+    "pid": {
+        "speed": {
+            "kp": 1.0,
+            "ki": 0.1,
+            "kd": 0.05
+        },
+        "steering": {
+            "kp": 0.5,
+            "ki": 0.05,
+            "kd": 0.02
+        }
+    },
+    "maze": {
+        "size": 16,
+        "cell_size": 180,
+        "wall_height": 50,
+        "wall_thickness": 12
+    },
+    "algorithm": {
+        "primary": "flood_fill",
+        "backup": "wall_follow",
+        "optimization": true
+    }
+}

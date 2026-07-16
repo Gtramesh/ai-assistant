@@ -377,12 +377,28 @@ let isListening = false;
 let recognition = null;
 let synthesis = window.speechSynthesis;
 
+let isLocalMode = true;
+
 document.addEventListener('DOMContentLoaded', () => {
     loadSystemInfo();
     navigateTo('');
     document.getElementById('userInput').focus();
     initSpeechRecognition();
+    checkAccessMode();
 });
+
+async function checkAccessMode() {
+    try {
+        const resp = await fetch(`${API}/api/access`);
+        const data = await resp.json();
+        isLocalMode = data.local;
+        if (!isLocalMode) {
+            document.getElementById('sidebar').style.display = 'none';
+            document.querySelector('.toggle-sidebar').style.display = 'none';
+            document.getElementById('headerSubtitle').textContent = 'Public access - chat only';
+        }
+    } catch(e) {}
+}
 
 /* ===== SPEECH RECOGNITION ===== */
 function initSpeechRecognition() {

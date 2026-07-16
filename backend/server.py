@@ -17,6 +17,17 @@ HISTORY_FILE = "chat_history.json"
 DEFAULT_ROOT = os.path.expanduser("~")
 
 
+def is_local(request):
+    host = request.host.split(":")[0]
+    return host in ("127.0.0.1", "localhost", "::1")
+
+
+def require_local():
+    if not is_local(request):
+        return jsonify({"error": "File access is only available on your local computer."}), 403
+    return None
+
+
 def load_history():
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r", encoding="utf-8") as f:
@@ -41,6 +52,8 @@ def static_files(path):
 
 @app.route("/api/files", methods=["GET"])
 def list_files():
+    denied = require_local()
+    if denied: return denied
     path = request.args.get("path", DEFAULT_ROOT)
     path = os.path.expanduser(path)
     if not os.path.exists(path):
@@ -67,6 +80,8 @@ def list_files():
 
 @app.route("/api/file", methods=["GET"])
 def read_file():
+    denied = require_local()
+    if denied: return denied
     path = request.args.get("path", "")
     path = os.path.expanduser(path)
     if not os.path.exists(path):
@@ -86,6 +101,8 @@ def read_file():
 
 @app.route("/api/file", methods=["POST"])
 def write_file():
+    denied = require_local()
+    if denied: return denied
     data = request.get_json()
     path = data.get("path", "")
     content = data.get("content", "")
@@ -101,6 +118,8 @@ def write_file():
 
 @app.route("/api/file", methods=["DELETE"])
 def delete_file():
+    denied = require_local()
+    if denied: return denied
     path = request.args.get("path", "")
     path = os.path.expanduser(path)
     if not os.path.exists(path):
@@ -117,6 +136,8 @@ def delete_file():
 
 @app.route("/api/file", methods=["PUT"])
 def rename_file():
+    denied = require_local()
+    if denied: return denied
     data = request.get_json()
     old_path = data.get("old_path", "")
     new_path = data.get("new_path", "")
@@ -131,6 +152,8 @@ def rename_file():
 
 @app.route("/api/mkdir", methods=["POST"])
 def make_dir():
+    denied = require_local()
+    if denied: return denied
     data = request.get_json()
     path = data.get("path", "")
     path = os.path.expanduser(path)
@@ -143,6 +166,8 @@ def make_dir():
 
 @app.route("/api/search", methods=["GET"])
 def search_files():
+    denied = require_local()
+    if denied: return denied
     query = request.args.get("q", "").lower()
     root = request.args.get("path", DEFAULT_ROOT)
     root = os.path.expanduser(root)
@@ -161,6 +186,11 @@ def search_files():
     except PermissionError:
         pass
     return jsonify({"results": results, "truncated": False})
+
+
+@app.route("/api/access", methods=["GET"])
+def check_access():
+    return jsonify({"local": is_local(request)})
 
 
 @app.route("/api/system", methods=["GET"])
