@@ -340,35 +340,55 @@ def process_command(message):
         return {"response": help_text}
 
     try:
-        response = query_huggingface(message)
+        response = query_ai(message)
         return {"response": response}
     except Exception as e:
         return {"response": f"AI Error: {str(e)}\n\nI can still help with file operations! Try 'help' to see what I can do."}
 
 
-def query_huggingface(message):
-    API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta"
-    headers = {"Content-Type": "application/json"}
+def query_ai(message):
+    errors = []
 
-    payload = {
-        "inputs": f"<|system|>\nYou are a helpful AI assistant. You are running locally on the user's computer as part of a file management assistant. Be concise and helpful. If asked to perform file operations, describe what the user should do.<|end|>\n<|user|>\n{message}<|end|>\n<|assistant|>",
-        "parameters": {"max_new_tokens": 512, "temperature": 0.7, "return_full_text": False},
-    }
     try:
-        resp = requests.post(API_URL, headers=headers, json=payload, timeout=30)
+        resp = requests.post(
+            "https://text.pollinations.ai/",
+            json={
+                "messages": [
+                    {"role": "system", "content": "You are a helpful AI assistant running locally on the user's computer as part of a file management assistant. Be concise and helpful. If asked to perform file operations, describe what the user should do."},
+                    {"role": "user", "content": message}
+                ],
+                "model": "openai",
+                "seed": 42,
+            },
+            timeout=60,
+        )
+        if resp.status_code == 200:
+            text = resp.text.strip()
+            if text:
+                return text
+        errors.append(f"Pollinations returned {resp.status_code}")
+    except Exception as e:
+        errors.append(f"Pollinations: {e}")
+
+    try:
+        resp = requests.post(
+            "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
+            json={
+                "inputs": f"<|system|>\nYou are a helpful AI assistant. Be concise.<|end|>\n<|user|>\n{message}<|end|>\n<|assistant|>",
+                "parameters": {"max_new_tokens": 512, "temperature": 0.7, "return_full_text": False},
+            },
+            headers={"Content-Type": "application/json"},
+            timeout=30,
+        )
         if resp.status_code == 200:
             result = resp.json()
             if isinstance(result, list) and len(result) > 0:
-                return result[0].get("generated_text", "No response generated.")
-            return "Unexpected response format."
-        elif resp.status_code == 503:
-            return "AI model is loading, please try again in 30 seconds."
-        else:
-            return f"AI service error (status {resp.status_code}). I can still help with file operations - try 'help'!"
-    except requests.exceptions.Timeout:
-        return "AI request timed out. I can still help with file operations - try 'help'!"
+                return result[0].get("generated_text", "No response.")
+        errors.append(f"HuggingFace returned {resp.status_code}")
     except Exception as e:
-        return f"AI service unavailable: {e}\n\nI can still help with file operations - try 'help'!"
+        errors.append(f"HuggingFace: {e}")
+
+    return f"AI services unavailable. Errors: {'; '.join(errors)}\n\nI can still help with file operations - try 'help'!"
 
 
 if __name__ == "__main__":
