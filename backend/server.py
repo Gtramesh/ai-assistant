@@ -183,9 +183,10 @@ def system_info():
 def chat():
     data = request.get_json()
     message = data.get("message", "")
+    language = data.get("language", "en-US")
     history = load_history()
 
-    result = process_command(message)
+    result = process_command(message, language)
 
     history.append({"role": "user", "content": message})
     history.append({"role": "assistant", "content": result["response"]})
@@ -211,7 +212,7 @@ def clear_history():
     return jsonify({"success": True})
 
 
-def process_command(message):
+def process_command(message, language="en-US"):
     msg = message.lower().strip()
 
     if any(w in msg for w in ["list files", "show files", "browse", "open folder", "show directory", "ls"]):
@@ -340,21 +341,23 @@ def process_command(message):
         return {"response": help_text}
 
     try:
-        response = query_ai(message)
+        response = query_ai(message, language)
         return {"response": response}
     except Exception as e:
         return {"response": f"AI Error: {str(e)}\n\nI can still help with file operations! Try 'help' to see what I can do."}
 
 
-def query_ai(message):
+def query_ai(message, language="en-US"):
     errors = []
+    lang_name = "Tamil" if language.startswith("ta") else "English"
+    system_prompt = f"You are a helpful AI assistant running locally. Respond in {lang_name}. Be concise and helpful."
 
     try:
         resp = requests.post(
             "https://text.pollinations.ai/",
             json={
                 "messages": [
-                    {"role": "system", "content": "You are a helpful AI assistant running locally on the user's computer as part of a file management assistant. Be concise and helpful. If asked to perform file operations, describe what the user should do."},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": message}
                 ],
                 "model": "openai",
@@ -374,7 +377,7 @@ def query_ai(message):
         resp = requests.post(
             "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
             json={
-                "inputs": f"<|system|>\nYou are a helpful AI assistant. Be concise.<|end|>\n<|user|>\n{message}<|end|>\n<|assistant|>",
+                "inputs": f"<|system|>\n{system_prompt}<|end|>\n<|user|>\n{message}<|end|>\n<|assistant|>",
                 "parameters": {"max_new_tokens": 512, "temperature": 0.7, "return_full_text": False},
             },
             headers={"Content-Type": "application/json"},

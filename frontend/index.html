@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assistant</title>
+    <title>AI Assistant - குரல் உதவியாளர்</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -21,6 +21,7 @@
             --danger: #e74c3c;
             --success: #2ecc71;
             --warning: #f39c12;
+            --mic-active: #e74c3c;
             --sidebar-width: 320px;
         }
         body {
@@ -30,10 +31,7 @@
             height: 100vh;
             overflow: hidden;
         }
-        .app {
-            display: flex;
-            height: 100vh;
-        }
+        .app { display: flex; height: 100vh; }
 
         /* Sidebar */
         .sidebar {
@@ -46,8 +44,7 @@
         }
         .sidebar.collapsed {
             transform: translateX(calc(-1 * var(--sidebar-width)));
-            width: 0;
-            overflow: hidden;
+            width: 0; overflow: hidden;
         }
         .sidebar-header {
             padding: 16px;
@@ -56,404 +53,235 @@
             align-items: center;
             gap: 10px;
         }
-        .sidebar-header h2 {
-            font-size: 14px;
-            color: var(--accent-bright);
-            flex: 1;
-        }
-        .sidebar-tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border);
-        }
+        .sidebar-header h2 { font-size: 14px; color: var(--accent-bright); flex: 1; }
+        .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); }
         .sidebar-tab {
-            flex: 1;
-            padding: 10px;
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
+            flex: 1; padding: 10px; text-align: center; font-size: 12px;
+            color: var(--text-secondary); cursor: pointer;
+            border-bottom: 2px solid transparent; transition: all 0.2s;
         }
         .sidebar-tab:hover { color: var(--text-primary); }
-        .sidebar-tab.active {
-            color: var(--accent-bright);
-            border-bottom-color: var(--accent-bright);
-        }
-        .sidebar-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px;
-        }
-
-        /* File browser */
+        .sidebar-tab.active { color: var(--accent-bright); border-bottom-color: var(--accent-bright); }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 8px; }
         .file-path {
-            padding: 8px 10px;
-            font-size: 11px;
-            color: var(--text-muted);
-            background: var(--bg-primary);
-            border-radius: 6px;
-            margin-bottom: 8px;
-            word-break: break-all;
+            padding: 8px 10px; font-size: 11px; color: var(--text-muted);
+            background: var(--bg-primary); border-radius: 6px; margin-bottom: 8px; word-break: break-all;
         }
         .file-entry {
-            display: flex;
-            align-items: center;
-            padding: 8px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            gap: 8px;
-            transition: background 0.15s;
+            display: flex; align-items: center; padding: 8px 10px; border-radius: 6px;
+            cursor: pointer; font-size: 13px; gap: 8px; transition: background 0.15s;
         }
         .file-entry:hover { background: var(--bg-tertiary); }
         .file-entry .icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
         .file-entry .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .file-entry .size { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
-        .file-entry .actions {
-            display: none;
-            gap: 4px;
-        }
+        .file-entry .actions { display: none; gap: 4px; }
         .file-entry:hover .actions { display: flex; }
         .file-entry:hover .size { display: none; }
         .file-action-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 2px 4px;
-            font-size: 12px;
-            border-radius: 3px;
+            background: none; border: none; color: var(--text-secondary);
+            cursor: pointer; padding: 2px 4px; font-size: 12px; border-radius: 3px;
         }
         .file-action-btn:hover { color: var(--text-primary); background: var(--accent); }
         .file-action-btn.delete:hover { color: var(--danger); }
-
-        /* Search */
-        .search-box {
-            padding: 8px;
-            border-bottom: 1px solid var(--border);
-        }
+        .search-box { padding: 8px; border-bottom: 1px solid var(--border); }
         .search-box input {
-            width: 100%;
-            padding: 8px 12px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 13px;
-            outline: none;
+            width: 100%; padding: 8px 12px; background: var(--bg-primary);
+            border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text-primary); font-size: 13px; outline: none;
         }
         .search-box input:focus { border-color: var(--accent-bright); }
-
-        /* Quick actions */
-        .quick-actions {
-            display: flex;
-            gap: 6px;
-            padding: 8px;
-            flex-wrap: wrap;
-        }
+        .quick-actions { display: flex; gap: 6px; padding: 8px; flex-wrap: wrap; }
         .quick-btn {
-            padding: 5px 10px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            color: var(--text-secondary);
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s;
+            padding: 5px 10px; background: var(--bg-tertiary); border: 1px solid var(--border);
+            border-radius: 14px; color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: all 0.2s;
         }
-        .quick-btn:hover {
-            background: var(--accent);
-            color: var(--accent-bright);
-            border-color: var(--accent-bright);
-        }
+        .quick-btn:hover { background: var(--accent); color: var(--accent-bright); border-color: var(--accent-bright); }
 
         /* Main chat area */
-        .main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
+        .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
         .chat-header {
-            padding: 12px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: var(--bg-secondary);
+            padding: 12px 20px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 12px; background: var(--bg-secondary);
         }
         .toggle-sidebar {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 20px;
-            cursor: pointer;
-            padding: 4px;
+            background: none; border: none; color: var(--text-secondary);
+            font-size: 20px; cursor: pointer; padding: 4px;
         }
         .toggle-sidebar:hover { color: var(--text-primary); }
         .chat-header-info { flex: 1; }
         .chat-header-info h1 { font-size: 16px; font-weight: 600; }
         .chat-header-info p { font-size: 12px; color: var(--text-secondary); }
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--success);
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+        /* Voice controls in header */
+        .voice-controls { display: flex; align-items: center; gap: 8px; }
+        .lang-toggle {
+            padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border);
+            background: var(--bg-tertiary); color: var(--text-secondary); font-size: 11px;
+            cursor: pointer; transition: all 0.2s;
         }
+        .lang-toggle:hover { border-color: var(--accent-bright); color: var(--accent-bright); }
+        .lang-toggle.active { background: var(--accent); color: var(--accent-bright); border-color: var(--accent-bright); }
+        .speak-toggle {
+            padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border);
+            background: var(--bg-tertiary); color: var(--text-secondary); font-size: 11px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .speak-toggle.active { background: var(--success); color: white; border-color: var(--success); }
 
         /* Messages */
-        .messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            scroll-behavior: smooth;
-        }
-        .message {
-            max-width: 80%;
-            margin-bottom: 16px;
-            animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .messages { flex: 1; overflow-y: auto; padding: 20px; scroll-behavior: smooth; }
+        .message { max-width: 80%; margin-bottom: 16px; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .message.user { margin-left: auto; }
         .message.assistant { margin-right: auto; }
         .message-bubble {
-            padding: 12px 16px;
-            border-radius: 16px;
-            font-size: 14px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-break: break-word;
+            padding: 12px 16px; border-radius: 16px; font-size: 14px;
+            line-height: 1.6; white-space: pre-wrap; word-break: break-word;
         }
         .message.user .message-bubble {
-            background: var(--accent);
-            color: var(--text-primary);
-            border-bottom-right-radius: 4px;
+            background: var(--accent); color: var(--text-primary); border-bottom-right-radius: 4px;
         }
         .message.assistant .message-bubble {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-            border-bottom-left-radius: 4px;
+            background: var(--bg-card); color: var(--text-primary);
+            border: 1px solid var(--border); border-bottom-left-radius: 4px;
         }
-        .message-bubble code {
-            background: rgba(0,0,0,0.3);
-            padding: 1px 5px;
-            border-radius: 3px;
-            font-size: 13px;
-        }
-        .message-bubble pre {
-            background: rgba(0,0,0,0.3);
-            padding: 10px;
-            border-radius: 6px;
-            overflow-x: auto;
-            margin: 8px 0;
-        }
-        .message-time {
-            font-size: 10px;
-            color: var(--text-muted);
-            margin-top: 4px;
-            padding: 0 4px;
-        }
+        .message-bubble code { background: rgba(0,0,0,0.3); padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+        .message-bubble pre { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; overflow-x: auto; margin: 8px 0; }
+        .message-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; padding: 0 4px; }
         .message.user .message-time { text-align: right; }
-
-        .welcome-msg {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-secondary);
-        }
-        .welcome-msg h2 {
-            font-size: 24px;
-            margin-bottom: 8px;
-            color: var(--accent-bright);
-        }
+        .welcome-msg { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+        .welcome-msg h2 { font-size: 24px; margin-bottom: 8px; color: var(--accent-bright); }
         .welcome-msg p { margin-bottom: 20px; font-size: 14px; }
-        .welcome-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-        }
+        .welcome-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
         .welcome-chip {
-            padding: 8px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
+            padding: 8px 16px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s;
         }
-        .welcome-chip:hover {
-            border-color: var(--accent-bright);
-            color: var(--accent-bright);
-        }
+        .welcome-chip:hover { border-color: var(--accent-bright); color: var(--accent-bright); }
 
-        /* Input */
-        .input-area {
-            padding: 16px 20px;
-            border-top: 1px solid var(--border);
-            background: var(--bg-secondary);
-        }
+        /* Input area */
+        .input-area { padding: 16px 20px; border-top: 1px solid var(--border); background: var(--bg-secondary); }
         .input-wrapper {
-            display: flex;
-            gap: 10px;
-            align-items: flex-end;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 8px 12px;
+            display: flex; gap: 10px; align-items: flex-end;
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: 12px; padding: 8px 12px;
         }
         .input-wrapper:focus-within { border-color: var(--accent-bright); }
         .input-wrapper textarea {
-            flex: 1;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 14px;
-            font-family: inherit;
-            resize: none;
-            outline: none;
-            max-height: 120px;
-            min-height: 24px;
-            line-height: 1.5;
+            flex: 1; background: none; border: none; color: var(--text-primary);
+            font-size: 14px; font-family: inherit; resize: none; outline: none;
+            max-height: 120px; min-height: 24px; line-height: 1.5;
         }
+
+        /* Microphone button */
+        .mic-btn {
+            width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border);
+            background: var(--bg-tertiary); color: var(--text-secondary);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0; transition: all 0.3s; position: relative;
+        }
+        .mic-btn:hover { border-color: var(--accent-bright); color: var(--accent-bright); }
+        .mic-btn.listening {
+            background: var(--mic-active); border-color: var(--mic-active);
+            color: white; animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+        .mic-status {
+            position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+            font-size: 9px; color: var(--mic-active); white-space: nowrap; display: none;
+        }
+        .mic-btn.listening .mic-status { display: block; }
+
         .send-btn {
-            background: var(--accent-bright);
-            border: none;
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-            transition: opacity 0.2s;
+            background: var(--accent-bright); border: none; color: white;
+            width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0; transition: opacity 0.2s;
         }
         .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .send-btn:hover:not(:disabled) { opacity: 0.85; }
 
-        /* Loading */
-        .typing-indicator {
-            display: none;
-            padding: 12px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            border-bottom-left-radius: 4px;
-            font-size: 14px;
-            color: var(--text-secondary);
-            max-width: 80px;
+        /* Voice waveform visualization */
+        .waveform {
+            display: none; align-items: center; gap: 3px; height: 24px; margin-right: 8px;
         }
-        .typing-indicator.visible { display: inline-block; }
-        .typing-dots span {
-            animation: blink 1.4s infinite both;
-            font-size: 18px;
+        .waveform.active { display: flex; }
+        .waveform .bar {
+            width: 3px; background: var(--mic-active); border-radius: 2px;
+            animation: wave 0.6s ease-in-out infinite;
         }
-        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink {
-            0%, 80%, 100% { opacity: 0.2; }
-            40% { opacity: 1; }
+        .waveform .bar:nth-child(1) { animation-delay: 0s; height: 8px; }
+        .waveform .bar:nth-child(2) { animation-delay: 0.1s; height: 16px; }
+        .waveform .bar:nth-child(3) { animation-delay: 0.2s; height: 12px; }
+        .waveform .bar:nth-child(4) { animation-delay: 0.3s; height: 20px; }
+        .waveform .bar:nth-child(5) { animation-delay: 0.15s; height: 10px; }
+        @keyframes wave {
+            0%, 100% { transform: scaleY(0.5); }
+            50% { transform: scaleY(1.2); }
         }
 
-        /* Scrollbar */
+        /* Typing indicator */
+        .typing-indicator {
+            display: none; padding: 12px 16px; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 16px; border-bottom-left-radius: 4px;
+            font-size: 14px; color: var(--text-secondary); max-width: 80px;
+        }
+        .typing-indicator.visible { display: inline-block; }
+        .typing-dots span { animation: blink 1.4s infinite both; font-size: 18px; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3a3a4e; }
 
         /* Modal */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.6);
-            z-index: 100;
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            z-index: 100; align-items: center; justify-content: center;
         }
         .modal-overlay.visible { display: flex; }
         .modal {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; width: 90%; max-width: 600px;
+            max-height: 80vh; display: flex; flex-direction: column;
         }
         .modal h3 { margin-bottom: 12px; }
         .modal textarea {
-            flex: 1;
-            min-height: 300px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            color: var(--text-primary);
-            font-family: 'Consolas', monospace;
-            font-size: 13px;
-            resize: vertical;
-            outline: none;
+            flex: 1; min-height: 300px; background: var(--bg-primary);
+            border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+            color: var(--text-primary); font-family: 'Consolas', monospace;
+            font-size: 13px; resize: vertical; outline: none;
         }
         .modal textarea:focus { border-color: var(--accent-bright); }
-        .modal-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            justify-content: flex-end;
-        }
+        .modal-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
         .modal-btn {
-            padding: 8px 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
+            padding: 8px 20px; border-radius: 8px; border: 1px solid var(--border);
+            cursor: pointer; font-size: 13px; transition: all 0.2s;
         }
-        .modal-btn.primary {
-            background: var(--accent-bright);
-            color: white;
-            border-color: var(--accent-bright);
-        }
-        .modal-btn.secondary {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
+        .modal-btn.primary { background: var(--accent-bright); color: white; border-color: var(--accent-bright); }
+        .modal-btn.secondary { background: var(--bg-tertiary); color: var(--text-primary); }
         .modal-btn:hover { opacity: 0.85; }
 
-        /* Toast */
         .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 13px;
-            z-index: 200;
-            animation: slideUp 0.3s;
+            position: fixed; bottom: 20px; right: 20px; padding: 12px 20px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; font-size: 13px; z-index: 200; animation: slideUp 0.3s;
         }
         .toast.success { border-color: var(--success); }
         .toast.error { border-color: var(--danger); }
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
 <div class="app">
-    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h2>AI Assistant</h2>
@@ -481,25 +309,28 @@
         </div>
     </div>
 
-    <!-- Main Chat -->
     <div class="main">
         <div class="chat-header">
             <button class="toggle-sidebar" onclick="toggleSidebar()">&#9776;</button>
             <div class="chat-header-info">
-                <h1>AI Assistant</h1>
-                <p>Ask me anything or manage your files</p>
+                <h1 id="headerTitle">AI Assistant</h1>
+                <p id="headerSubtitle">Speak in Tamil or English</p>
+            </div>
+            <div class="voice-controls">
+                <button class="lang-toggle active" id="langBtn" onclick="toggleLang()" title="Toggle language">Tamil</button>
+                <button class="speak-toggle" id="speakBtn" onclick="toggleAutoSpeak()" title="Auto-speak responses">Speak</button>
             </div>
             <div class="status-dot" id="statusDot"></div>
         </div>
         <div class="messages" id="messages">
             <div class="welcome-msg" id="welcome">
                 <h2>AI Assistant</h2>
-                <p>Your personal AI assistant with file management capabilities</p>
+                <p id="welcomeSub">உங்கள் தமிழ் AI உதவியாளர் - குரல் அல்லது தட்டச்சு செய்யுங்கள்</p>
                 <div class="welcome-chips">
-                    <div class="welcome-chip" onclick="sendQuick('help')">What can you do?</div>
+                    <div class="welcome-chip" onclick="sendQuick('help')">Help / உதவி</div>
                     <div class="welcome-chip" onclick="sendQuick('list files')">Browse Files</div>
                     <div class="welcome-chip" onclick="sendQuick('system info')">System Info</div>
-                    <div class="welcome-chip" onclick="sendQuick('show me my documents')">My Documents</div>
+                    <div class="welcome-chip" onclick="sendQuick('உன்னால் என்ன செய்ய முடியும்?')">தமிழில் கேள்</div>
                 </div>
             </div>
             <div class="typing-indicator" id="typingIndicator">
@@ -508,14 +339,20 @@
         </div>
         <div class="input-area">
             <div class="input-wrapper">
-                <textarea id="userInput" rows="1" placeholder="Type a message..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+                <div class="waveform" id="waveform">
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                </div>
+                <textarea id="userInput" rows="1" placeholder="தமிழில் பேண்ணுங்க அல்லது தட்டச்சு செய்யுங்க..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+                <button class="mic-btn" id="micBtn" onclick="toggleVoice()" title="Click to speak">
+                    &#127908;
+                    <span class="mic-status" id="micStatus">Listening...</span>
+                </button>
                 <button class="send-btn" id="sendBtn" onclick="sendMessage()">&#10148;</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- File Editor Modal -->
 <div class="modal-overlay" id="editorModal">
     <div class="modal">
         <h3 id="editorTitle">Edit File</h3>
@@ -534,16 +371,126 @@ let currentTab = 'files';
 let editingPath = '';
 let messageCount = 0;
 
+let currentLang = 'ta-IN';
+let autoSpeak = false;
+let isListening = false;
+let recognition = null;
+let synthesis = window.speechSynthesis;
+
 document.addEventListener('DOMContentLoaded', () => {
     loadSystemInfo();
     navigateTo('');
     document.getElementById('userInput').focus();
+    initSpeechRecognition();
 });
 
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('collapsed');
+/* ===== SPEECH RECOGNITION ===== */
+function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        document.getElementById('micBtn').style.opacity = '0.3';
+        document.getElementById('micBtn').title = 'Speech not supported in this browser';
+        return;
+    }
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = currentLang;
+
+    recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+        }
+        document.getElementById('userInput').value = transcript;
+        autoResize(document.getElementById('userInput'));
+    };
+
+    recognition.onend = () => {
+        stopListening();
+        const text = document.getElementById('userInput').value.trim();
+        if (text) {
+            setTimeout(() => sendMessage(), 300);
+        }
+    };
+
+    recognition.onerror = (event) => {
+        console.log('Speech error:', event.error);
+        stopListening();
+        if (event.error === 'not-allowed') {
+            showToast('Microphone access denied. Please allow microphone.', 'error');
+        } else if (event.error === 'no-speech') {
+            showToast('No speech detected. Try again.', 'error');
+        }
+    };
 }
 
+function toggleVoice() {
+    if (isListening) {
+        recognition && recognition.stop();
+        stopListening();
+    } else {
+        startListening();
+    }
+}
+
+function startListening() {
+    if (!recognition) {
+        showToast('Speech recognition not supported. Use Chrome or Edge.', 'error');
+        return;
+    }
+    recognition.lang = currentLang;
+    isListening = true;
+    document.getElementById('micBtn').classList.add('listening');
+    document.getElementById('waveform').classList.add('active');
+    document.getElementById('userInput').placeholder = currentLang === 'ta-IN' ? 'கேட்டுக்கொண்டிருக்கிறேன்...' : 'Listening...';
+    try { recognition.start(); } catch(e) {}
+}
+
+function stopListening() {
+    isListening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.getElementById('waveform').classList.remove('active');
+    document.getElementById('userInput').placeholder = currentLang === 'ta-IN' ? 'தமிழில் பேண்ணுங்க அல்லது தட்டச்சு செய்யுங்க...' : 'Type or tap mic to speak...';
+}
+
+/* ===== TEXT TO SPEECH ===== */
+function speak(text) {
+    if (!autoSpeak || !synthesis) return;
+    synthesis.cancel();
+    const clean = text.replace(/```[\s\S]*?```/g, '').replace(/`[^`]+`/g, '').replace(/\*\*/g, '').replace(/[#*_\[\]]/g, '').trim();
+    if (!clean) return;
+    const utter = new SpeechSynthesisUtterance(clean);
+    utter.lang = currentLang;
+    utter.rate = 0.95;
+    utter.pitch = 1;
+    const voices = synthesis.getVoices();
+    const langVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
+    if (langVoice) utter.voice = langVoice;
+    synthesis.speak(utter);
+}
+
+function toggleAutoSpeak() {
+    autoSpeak = !autoSpeak;
+    document.getElementById('speakBtn').classList.toggle('active', autoSpeak);
+    showToast(autoSpeak ? (currentLang === 'ta-IN' ? 'குரல் இயக்கப்பட்டது' : 'Voice enabled') : (currentLang === 'ta-IN' ? 'குரல் நிறுத்தப்பட்டது' : 'Voice disabled'), 'success');
+}
+
+function toggleLang() {
+    currentLang = currentLang === 'ta-IN' ? 'en-US' : 'ta-IN';
+    const btn = document.getElementById('langBtn');
+    const isTamil = currentLang === 'ta-IN';
+    btn.textContent = isTamil ? 'Tamil' : 'English';
+    btn.classList.toggle('active', isTamil);
+    document.getElementById('headerTitle').textContent = isTamil ? 'AI உதவியாளர்' : 'AI Assistant';
+    document.getElementById('headerSubtitle').textContent = isTamil ? 'தமிழ் அல்லது ஆங்கிலத்தில் பேசுங்கள்' : 'Speak in Tamil or English';
+    document.getElementById('welcomeSub').textContent = isTamil ? 'உங்கள் தமிழ் AI உதவியாளர் - குரல் அல்லது தட்டச்சு செய்யுங்கள்' : 'Your AI assistant with voice - speak or type';
+    document.getElementById('userInput').placeholder = isTamil ? 'தமிழில் பேண்ணுங்க அல்லது தட்டச்சு செய்யுங்க...' : 'Type or tap mic to speak...';
+    if (recognition) recognition.lang = currentLang;
+}
+
+/* ===== SIDEBAR ===== */
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
 function switchTab(tab) {
     currentTab = tab;
     document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
@@ -551,32 +498,21 @@ function switchTab(tab) {
     document.getElementById('filesPanel').style.display = tab === 'files' ? '' : 'none';
     document.getElementById('infoPanel').style.display = tab === 'info' ? '' : 'none';
 }
-
 async function loadSystemInfo() {
     try {
         const resp = await fetch(`${API}/api/system`);
         const data = await resp.json();
-        document.getElementById('infoPanel').innerHTML = `
-            <div style="padding:12px; font-size:13px;">
-                <div style="margin-bottom:12px; font-size:14px; font-weight:600; color:var(--accent-bright);">System Information</div>
-                ${Object.entries(data).map(([k, v]) => `
-                    <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
-                        <span style="color:var(--text-secondary)">${k}</span>
-                        <span>${v}</span>
-                    </div>
-                `).join('')}
-            </div>
-        `;
+        document.getElementById('infoPanel').innerHTML = `<div style="padding:12px; font-size:13px;">
+            <div style="margin-bottom:12px; font-size:14px; font-weight:600; color:var(--accent-bright);">System Information</div>
+            ${Object.entries(data).map(([k, v]) => `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);"><span style="color:var(--text-secondary)">${k}</span><span>${v}</span></div>`).join('')}
+        </div>`;
     } catch(e) {
         document.getElementById('infoPanel').innerHTML = '<div style="padding:12px;color:var(--text-muted)">Failed to load system info</div>';
     }
 }
-
 async function navigateTo(path) {
     if (path === '~') path = '';
-    if (path && !path.includes(':') && !path.startsWith('/') && path !== '..') {
-        path = currentPath ? currentPath + '/' + path : path;
-    }
+    if (path && !path.includes(':') && !path.startsWith('/') && path !== '..') path = currentPath ? currentPath + '/' + path : path;
     try {
         const resp = await fetch(`${API}/api/files?path=${encodeURIComponent(path || '')}`);
         const data = await resp.json();
@@ -585,44 +521,26 @@ async function navigateTo(path) {
         document.getElementById('filePath').textContent = data.path;
         const fileList = document.getElementById('fileList');
         let html = '';
-        if (data.parent !== data.path) {
-            html += `<div class="file-entry" onclick="navigateTo('${escapePath(data.parent)}')">
-                <span class="icon">&#128193;</span><span class="name">..</span></div>`;
-        }
+        if (data.parent !== data.path) html += `<div class="file-entry" onclick="navigateTo('${escapePath(data.parent)}')"><span class="icon">&#128193;</span><span class="name">..</span></div>`;
         data.entries.forEach(e => {
             const icon = e.is_dir ? '&#128193;' : getFileIcon(e.extension);
             const size = e.size != null ? formatSize(e.size) : '';
             html += `<div class="file-entry" ondblclick="${e.is_dir ? `navigateTo('${escapePath(e.path)}')` : `openFile('${escapePath(e.path)}')`}">
-                <span class="icon">${icon}</span>
-                <span class="name" title="${escapeHtml(e.path)}">${escapeHtml(e.name)}</span>
-                <span class="size">${size}</span>
-                <span class="actions">
-                    ${!e.is_dir ? `<button class="file-action-btn" onclick="event.stopPropagation();openFile('${escapePath(e.path)}')" title="Edit">&#9998;</button>` : ''}
-                    <button class="file-action-btn delete" onclick="event.stopPropagation();deleteFile('${escapePath(e.path)}','${escapeHtml(e.name)}')" title="Delete">&#10006;</button>
-                </span>
-            </div>`;
+                <span class="icon">${icon}</span><span class="name" title="${escapeHtml(e.path)}">${escapeHtml(e.name)}</span><span class="size">${size}</span>
+                <span class="actions">${!e.is_dir ? `<button class="file-action-btn" onclick="event.stopPropagation();openFile('${escapePath(e.path)}')" title="Edit">&#9998;</button>` : ''}
+                <button class="file-action-btn delete" onclick="event.stopPropagation();deleteFile('${escapePath(e.path)}','${escapeHtml(e.name)}')" title="Delete">&#10006;</button></span></div>`;
         });
         if (!data.entries.length) html = '<div style="padding:20px;text-align:center;color:var(--text-muted)">Empty folder</div>';
         fileList.innerHTML = html;
-    } catch(e) {
-        showToast('Failed to load files', 'error');
-    }
+    } catch(e) { showToast('Failed to load files', 'error'); }
 }
-
 function getFileIcon(ext) {
-    const map = {'.py':'&#128013;', '.js':'&#127312;', '.html':'&#127760;', '.css':'&#127912;', '.json':'&#128196;', '.md':'&#128221;', '.txt':'&#128196;', '.png':'&#127748;', '.jpg':'&#127748;', '.gif':'&#127748;', '.zip':'&#128230;', '.mp3':'&#127925;', '.mp4':'&#127909;', '.pdf':'&#128211;', '.exe':'&#9881;', '.dll':'&#9881;'};
+    const map = {'.py':'&#128013;','.js':'&#127312;','.html':'&#127760;','.css':'&#127912;','.json':'&#128196;','.md':'&#128221;','.txt':'&#128196;','.png':'&#127748;','.jpg':'&#127748;','.zip':'&#128230;','.mp3':'&#127925;','.mp4':'&#127909;','.pdf':'&#128211;'};
     return map[(ext||'').toLowerCase()] || '&#128196;';
 }
-
-function formatSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
-    return (bytes/1048576).toFixed(1) + ' MB';
-}
-
+function formatSize(bytes) { if (bytes < 1024) return bytes + ' B'; if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB'; return (bytes/1048576).toFixed(1) + ' MB'; }
 function escapePath(p) { return p.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
 let searchTimeout;
 function searchFiles(query) {
     clearTimeout(searchTimeout);
@@ -634,14 +552,12 @@ function searchFiles(query) {
         let html = '';
         data.results.forEach(e => {
             const icon = e.is_dir ? '&#128193;' : '&#128196;';
-            html += `<div class="file-entry" ondblclick="${e.is_dir ? `navigateTo('${escapePath(e.path)}')` : `openFile('${escapePath(e.path)}')`}">
-                <span class="icon">${icon}</span><span class="name" title="${escapeHtml(e.path)}">${escapeHtml(e.name)}</span></div>`;
+            html += `<div class="file-entry" ondblclick="${e.is_dir ? `navigateTo('${escapePath(e.path)}')` : `openFile('${escapePath(e.path)}')`}"><span class="icon">${icon}</span><span class="name" title="${escapeHtml(e.path)}">${escapeHtml(e.name)}</span></div>`;
         });
         if (!data.results.length) html = '<div style="padding:20px;text-align:center;color:var(--text-muted)">No results</div>';
         fileList.innerHTML = html;
     }, 300);
 }
-
 async function openFile(path) {
     try {
         const resp = await fetch(`${API}/api/file?path=${encodeURIComponent(path)}`);
@@ -653,82 +569,51 @@ async function openFile(path) {
         document.getElementById('editorModal').classList.add('visible');
     } catch(e) { showToast('Failed to open file', 'error'); }
 }
-
-function closeEditor() {
-    document.getElementById('editorModal').classList.remove('visible');
-}
-
+function closeEditor() { document.getElementById('editorModal').classList.remove('visible'); }
 async function saveFile() {
     try {
-        const resp = await fetch(`${API}/api/file`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ path: editingPath, content: document.getElementById('editorContent').value })
-        });
+        const resp = await fetch(`${API}/api/file`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ path: editingPath, content: document.getElementById('editorContent').value }) });
         const data = await resp.json();
         if (data.error) { showToast(data.error, 'error'); return; }
-        showToast('File saved!', 'success');
-        closeEditor();
-        navigateTo(currentPath);
+        showToast('File saved!', 'success'); closeEditor(); navigateTo(currentPath);
     } catch(e) { showToast('Failed to save file', 'error'); }
 }
-
 async function deleteFile(path, name) {
     if (!confirm(`Delete "${name}"?`)) return;
     try {
         const resp = await fetch(`${API}/api/file?path=${encodeURIComponent(path)}`, { method: 'DELETE' });
         const data = await resp.json();
         if (data.error) { showToast(data.error, 'error'); return; }
-        showToast('Deleted!', 'success');
-        navigateTo(currentPath);
+        showToast('Deleted!', 'success'); navigateTo(currentPath);
     } catch(e) { showToast('Failed to delete', 'error'); }
 }
 
-function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-}
-
-function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-}
-
-function sendQuick(text) {
-    document.getElementById('userInput').value = text;
-    sendMessage();
-}
+/* ===== CHAT ===== */
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+function sendQuick(text) { document.getElementById('userInput').value = text; sendMessage(); }
 
 async function sendMessage() {
     const input = document.getElementById('userInput');
     const msg = input.value.trim();
     if (!msg) return;
-
     if (messageCount === 0) document.getElementById('welcome').style.display = 'none';
     messageCount++;
-
     addMessage('user', msg);
-    input.value = '';
-    input.style.height = 'auto';
+    input.value = ''; input.style.height = 'auto';
     document.getElementById('sendBtn').disabled = true;
     document.getElementById('typingIndicator').classList.add('visible');
     scrollToBottom();
-
     try {
-        const resp = await fetch(`${API}/api/chat`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ message: msg })
-        });
+        const resp = await fetch(`${API}/api/chat`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message: msg, language: currentLang }) });
         const data = await resp.json();
         addMessage('assistant', data.response);
-        if (data.action === 'list_files' && data.data?.path) {
-            navigateTo(data.data.path);
-            switchTab('files');
-        }
+        speak(data.response);
+        if (data.action === 'list_files' && data.data?.path) { navigateTo(data.data.path); switchTab('files'); }
     } catch(e) {
-        addMessage('assistant', 'Connection error. Make sure the server is running.');
+        const err = currentLang === 'ta-IN' ? 'இணைப்பு பிழை. சர்வர் இயங்குகிறதா என்று சரிபாருங்கள்.' : 'Connection error. Make sure the server is running.';
+        addMessage('assistant', err);
     }
-
     document.getElementById('typingIndicator').classList.remove('visible');
     document.getElementById('sendBtn').disabled = false;
     scrollToBottom();
@@ -742,7 +627,6 @@ function addMessage(role, content) {
     const typing = document.getElementById('typingIndicator');
     typing.parentNode.insertBefore(div, typing);
 }
-
 function formatMessage(text) {
     text = escapeHtml(text);
     text = text.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
@@ -750,26 +634,17 @@ function formatMessage(text) {
     text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     return text;
 }
-
-function scrollToBottom() {
-    const m = document.getElementById('messages');
-    m.scrollTop = m.scrollHeight;
-}
-
+function scrollToBottom() { document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight; }
 function showToast(msg, type = '') {
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = msg;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    toast.className = `toast ${type}`; toast.textContent = msg;
+    document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000);
 }
-
 async function clearChat() {
     if (!confirm('Clear chat history?')) return;
     await fetch(`${API}/api/history`, { method: 'DELETE' });
     document.querySelectorAll('.message').forEach(m => m.remove());
-    document.getElementById('welcome').style.display = '';
-    messageCount = 0;
+    document.getElementById('welcome').style.display = ''; messageCount = 0;
     showToast('Chat cleared', 'success');
 }
 </script>
