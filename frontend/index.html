@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assistant - குரல் உதவியாளர்</title>
+    <title>AI Assistant Tamil</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -284,7 +284,7 @@
 <div class="app">
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>AI Assistant</h2>
+            <h2>AI Assistant Tamil</h2>
             <button class="file-action-btn" onclick="clearChat()" title="Clear chat">Clear</button>
         </div>
         <div class="sidebar-tabs">
@@ -313,7 +313,7 @@
         <div class="chat-header">
             <button class="toggle-sidebar" onclick="toggleSidebar()">&#9776;</button>
             <div class="chat-header-info">
-                <h1 id="headerTitle">AI Assistant</h1>
+                <h1 id="headerTitle">AI Assistant Tamil</h1>
                 <p id="headerSubtitle">Speak in Tamil or English</p>
             </div>
             <div class="voice-controls">
@@ -324,7 +324,7 @@
         </div>
         <div class="messages" id="messages">
             <div class="welcome-msg" id="welcome">
-                <h2>AI Assistant</h2>
+                <h2>AI Assistant Tamil</h2>
                 <p id="welcomeSub">உங்கள் தமிழ் AI உதவியாளர் - குரல் அல்லது தட்டச்சு செய்யுங்கள்</p>
                 <div class="welcome-chips">
                     <div class="welcome-chip" onclick="sendQuick('help')">Help / உதவி</div>
@@ -498,7 +498,7 @@ function toggleLang() {
     const isTamil = currentLang === 'ta-IN';
     btn.textContent = isTamil ? 'Tamil' : 'English';
     btn.classList.toggle('active', isTamil);
-    document.getElementById('headerTitle').textContent = isTamil ? 'AI உதவியாளர்' : 'AI Assistant';
+    document.getElementById('headerTitle').textContent = isTamil ? 'AI Assistant Tamil' : 'AI Assistant Tamil';
     document.getElementById('headerSubtitle').textContent = isTamil ? 'தமிழ் அல்லது ஆங்கிலத்தில் பேசுங்கள்' : 'Speak in Tamil or English';
     document.getElementById('welcomeSub').textContent = isTamil ? 'உங்கள் தமிழ் AI உதவியாளர் - குரல் அல்லது தட்டச்சு செய்யுங்கள்' : 'Your AI assistant with voice - speak or type';
     document.getElementById('userInput').placeholder = isTamil ? 'தமிழில் பேண்ணுங்க அல்லது தட்டச்சு செய்யுங்க...' : 'Type or tap mic to speak...';
