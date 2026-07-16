@@ -10,10 +10,13 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import requests
 
-app = Flask(__name__, static_folder="../frontend", static_url_path="")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
+
+app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
 CORS(app)
 
-HISTORY_FILE = "chat_history.json"
+HISTORY_FILE = os.path.join(BASE_DIR, "chat_history.json")
 DEFAULT_ROOT = os.path.expanduser("~")
 
 
@@ -42,12 +45,12 @@ def save_history(history):
 
 @app.route("/")
 def index():
-    return send_from_directory(app.static_folder, "index.html")
+    return send_from_directory(FRONTEND_DIR, "index.html")
 
 
 @app.route("/<path:path>")
 def static_files(path):
-    return send_from_directory(app.static_folder, path)
+    return send_from_directory(FRONTEND_DIR, path)
 
 
 @app.route("/api/files", methods=["GET"])
