@@ -404,18 +404,15 @@ def query_ai(message, language="en-US"):
     except Exception as e:
         errors.append(f"HuggingFace: {e}")
 
-    return f"AI services unavailable. Errors: {'; '.join(errors)}\n\nI can still help with file operations - try 'help'!"
+    return f"AI services unavailable. Errors: {'; '.join(errors)}\n\nTry 'help' to see what I can do!"
 
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    host = os.environ.get("HOST", "0.0.0.0")
     print("=" * 50)
-    print("  AI Assistant - Local Server")
+    print("  AI Assistant Tamil - Cloud Server")
     print("=" * 50)
-    print(f"  Server:  http://localhost:5000")
-    print(f"  System:  {platform.system()} {platform.release()}")
-    print(f"  User:    {os.getenv('USERNAME') or os.getenv('USER', 'unknown')}")
+    print(f"  Server:  http://{host}:{port}")
     print("=" * 50)
-    print("  Open your browser and go to: http://localhost:5000")
-    print("  Press Ctrl+C to stop the server")
-    print("=" * 50)
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(host=host, port=port, debug=False)
