@@ -335,39 +335,22 @@ def process_command(message, language="en-US"):
             return {"response": f"Found {len(results)} results:\n\n" + "\n".join(results), "action": "search", "data": {"query": query, "results": results}}
         return {"response": f"No files found matching '{query}'"}
 
-    if any(w in msg for w in ["system info", "system details", "about my computer", "pc info", "computer info"]):
-        info = {
-            "platform": platform.system(),
-            "version": platform.version(),
-            "hostname": platform.node(),
-            "python": platform.python_version(),
-            "cpu_count": psutil.cpu_count(),
-            "ram_total": f"{psutil.virtual_memory().total / (1024**3):.1f} GB",
-            "ram_used": f"{psutil.virtual_memory().used / (1024**3):.1f} GB",
-            "ram_percent": f"{psutil.virtual_memory().percent}%",
-            "user": os.getenv("USERNAME") or os.getenv("USER", "unknown"),
-        }
-        lines = [f"{k}: {v}" for k, v in info.items()]
-        return {"response": "System Information:\n\n" + "\n".join(lines), "action": "system_info", "data": info}
-
     if any(w in msg for w in ["help", "what can you do", "commands", "how to"]):
         help_text = """Here's what I can do:
 
-**File Operations:**
-- `list files` or `show files` - List files in current directory
-- `list files in C:\\Users` - List files in a specific folder
-- `read file path` - Read a file's content
-- `create file name.txt with content Hello` - Create a new file
-- `delete file path` - Delete a file
-- `search for filename` - Search for files
-
-**System Info:**
-- `system info` - Show computer details
-
 **Chat:**
-- Ask me anything! I can help with coding, explanations, and more.
+- Ask me anything in Tamil or English!
+- I can help with coding, explanations, translations, and more.
 
-**Tip:** You can also use the file browser on the left side to navigate and edit files directly!"""
+**Voice:**
+- Click the mic button to speak
+- Toggle Tamil/English with the language button
+- Enable "Speak" to hear responses read aloud
+
+**Tips:**
+- Try asking "what is Python?" or "explain AI"
+- Switch to Tamil and ask "உன்னால் என்ன செய்ய முடியும்?"
+- Use voice input for hands-free conversation!"""
         return {"response": help_text}
 
     try:
